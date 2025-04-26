@@ -1,61 +1,55 @@
 #!/bin/bash
 
-# رنگ‌ها برای نمایش بهتر
-BLUE='\033[0;34m'
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m' # بدون رنگ
-
-# 1. به‌روزرسانی سیستم
-echo -e "${BLUE}1. به‌روزرسانی سیستم...${NC}"
+# 1. Update system
+echo "1. Updating system..."
 sudo apt update
 
-# 2. نصب پیش‌نیازها
-echo -e "${BLUE}2. نصب پیش‌نیازها...${NC}"
+# 2. Install prerequisites
+echo "2. Installing prerequisites..."
 sudo apt install -y ca-certificates curl gnupg
 
-# 3. ساخت پوشه برای keyrings
-echo -e "${BLUE}3. ساخت پوشه keyrings...${NC}"
+# 3. Create keyrings directory
+echo "3. Creating keyrings directory..."
 sudo install -m 0755 -d /etc/apt/keyrings
 
-# 4. دانلود و ذخیره GPG Key داکر
-echo -e "${BLUE}4. دانلود و ذخیره GPG Key داکر...${NC}"
+# 4. Download and store Docker GPG Key
+echo "4. Downloading and storing Docker GPG key..."
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o docker.gpg
 sudo mv docker.gpg /etc/apt/keyrings/docker.gpg
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
-# 5. اضافه کردن Repository داکر
-echo -e "${BLUE}5. اضافه کردن Repository داکر...${NC}"
+# 5. Add Docker repository
+echo "5. Adding Docker repository..."
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
 https://download.docker.com/linux/ubuntu \
 $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# 6. به‌روزرسانی مجدد و نصب Docker و پلاگین‌هایش
-echo -e "${BLUE}6. به‌روزرسانی و نصب Docker و پلاگین‌ها...${NC}"
+# 6. Update and install Docker packages
+echo "6. Updating and installing Docker packages..."
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# 7. نصب docker-compose دستی (نسخه جدیدتر)
-echo -e "${BLUE}7. نصب docker-compose دستی...${NC}"
+# 7. Install docker-compose manually
+echo "7. Installing docker-compose manually..."
 sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 
-# 8. ساخت پوشه n8n و ورود به آن
-echo -e "${BLUE}8. ساخت پوشه n8n و ورود به آن...${NC}"
+# 8. Create n8n directory and navigate into it
+echo "8. Creating n8n directory and navigating into it..."
 mkdir -p ~/n8n
 cd ~/n8n
 
-# 9. ساخت پوشه داده n8n
-echo -e "${BLUE}9. ساخت پوشه n8n_data و تغییر مالکیت آن...${NC}"
+# 9. Create n8n_data directory and set permissions
+echo "9. Creating n8n_data directory and setting permissions..."
 mkdir -p n8n_data
 sudo chown 1000:1000 n8n_data
 
-# 10. دریافت دامنه از کاربر
-echo -e "${BLUE}10. لطفاً دامنه خود را وارد کنید (مثلاً n8n.example.com):${NC}"
-read -p "دامنه: " DOMAIN
+# 10. Get domain from user
+echo "10. Please enter your domain (e.g., n8n.example.com):"
+read -p "Domain: " DOMAIN
 
-# 11. ساخت فایل docker-compose.yml
-echo -e "${BLUE}11. ساخت فایل docker-compose.yml...${NC}"
+# 11. Create docker-compose.yml file
+echo "11. Creating docker-compose.yml file..."
 cat > docker-compose.yml <<EOF
 version: "3"
 
@@ -82,8 +76,8 @@ volumes:
     driver: local
 EOF
 
-# 12. نصب و راه‌اندازی اولیه Nginx بدون SSL
-echo -e "${BLUE}12. نصب و پیکربندی اولیه Nginx بدون SSL...${NC}"
+# 12. Install and configure Nginx
+echo "12. Installing and configuring Nginx..."
 sudo apt install nginx -y
 cat > /etc/nginx/sites-available/n8n <<EOF
 server {
@@ -107,19 +101,19 @@ EOF
 sudo ln -sf /etc/nginx/sites-available/n8n /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 
-# 13. نصب Certbot و گرفتن گواهی SSL
-echo -e "${BLUE}13. نصب Certbot و گرفتن گواهی SSL...${NC}"
+# 13. Install Certbot and obtain SSL certificate
+echo "13. Installing Certbot and obtaining SSL certificate..."
 sudo apt install certbot python3-certbot-nginx -y
 sudo certbot --nginx -d $DOMAIN
 
-# 14. تست تمدید خودکار گواهی
-echo -e "${BLUE}14. تست تمدید خودکار گواهی SSL (Dry Run)...${NC}"
+# 14. Test SSL certificate auto-renewal
+echo "14. Testing SSL certificate auto-renewal (Dry Run)..."
 sudo certbot renew --dry-run
 
-# 15. راه‌اندازی Docker Compose
-echo -e "${BLUE}15. راه‌اندازی Docker Compose...${NC}"
+# 15. Start Docker Compose services
+echo "15. Starting Docker Compose services..."
 docker-compose down
 docker-compose up -d
 
-# پایان
-echo -e "${GREEN}✅ نصب و راه‌اندازی کامل شد! n8n اکنون از طریق https://$DOMAIN در دسترس است.${NC}"
+# Done
+echo "✅ Installation and setup completed! n8n is now available at https://$DOMAIN"
